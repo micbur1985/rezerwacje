@@ -13,11 +13,16 @@
         <input v-model="formData.date" type="date" required />
       </div>
 
+      <div class="honeypot-field" aria-hidden="true">
+        <label for="website">Strona WWW:</label>
+        <input id="website" v-model="formData.website" type="text" tabindex="-1" autocomplete="off" />
+      </div>
+
       <div class="form-group">
         <label>Liczba gości:</label>
         <input v-model="formData.guests" type="number" required />
       </div>
-
+        
       <button type="submit" class="submit-btn" :disabled="isSending">
         {{ isSending ? 'Wysyłanie...' : 'Wyślij zapytanie' }}
       </button>
@@ -36,7 +41,13 @@
 <script setup>
 import { ref, reactive } from 'vue'
 
-const formData = reactive({ name: '', date: '', guests: '' })
+const formData = reactive({ 
+  name: '', 
+  date: '', 
+  guests: '',
+  website: '' // <-- Pole dla bota
+})
+
 const isSubmitted = ref(false)
 const isSending = ref(false)
 const errorMessage = ref('')
@@ -46,34 +57,30 @@ const submitReservation = async () => {
   errorMessage.value = ''
 
   try {
-    // Odpytujemy plik wyslij.php, który musi leżeć na FTP w tym samym folderze
     const response = await fetch('wyslij.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData)
     })
 
-    // Pobieramy odpowiedź tekstową z serwera
     const textResponse = await response.text()
     
     try {
-      // Próbujemy zamienić odpowiedź na JSON
       const result = JSON.parse(textResponse)
       
       if (response.ok && result.status === 'success') {
-        isSubmitted.value = true // Sukces! Pokazujemy ekran podziękowania
+        isSubmitted.value = true 
       } else {
         errorMessage.value = result.message || 'Wystąpił błąd po stronie serwera.'
       }
     } catch (parseError) {
-      // Jeśli PHP zwróci błąd (np. błąd w kodzie PHP), wylądujemy tutaj
       console.error("Serwer zwrócił nieprawidłowe dane:", textResponse)
-      errorMessage.value = 'Błąd serwera. Sprawdź konsolę (F12) po więcej szczegółów.'
+      errorMessage.value = 'Błąd serwera. Sprawdź konsolę po więcej szczegółów.'
     }
 
   } catch (error) {
     console.error('Błąd połączenia:', error)
-    errorMessage.value = 'Brak połączenia z plikiem wyslij.php.'
+    errorMessage.value = 'Brak połączenia z serwerem.'
   } finally {
     isSending.value = false
   }
@@ -83,6 +90,7 @@ const resetForm = () => {
   formData.name = ''
   formData.date = ''
   formData.guests = ''
+  formData.website = '' 
   isSubmitted.value = false
   errorMessage.value = ''
 }
@@ -97,4 +105,14 @@ button:disabled { background: #999; cursor: not-allowed; }
 .reset-btn { background: #008CBA; margin-top: 15px; }
 .error-msg { color: red; margin-top: 15px; font-weight: bold; }
 .success-message { text-align: center; color: #2c3e50; }
+.honeypot-field {
+  opacity: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 0;
+  width: 0;
+  z-index: -1;
+  overflow: hidden;
+}
 </style>

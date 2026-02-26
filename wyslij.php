@@ -21,6 +21,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = htmlspecialchars($input['name'] ?? '');
     $date = htmlspecialchars($input['date'] ?? '');
     $guests = htmlspecialchars($input['guests'] ?? '');
+    
+    // Odbieramy pole z naszej pułapki
+    $website = $input['website'] ?? '';
+
+    // WERYFIKACJA HONEYPOT
+    if (!empty($website)) {
+        // Jeśli pole NIE JEST puste, to znaczy że wypełnił je bot!
+        // Zwracamy sztuczny sukces, żeby bot myślał, że mu się udało i przestał próbować.
+        echo json_encode(['status' => 'success', 'message' => 'Wysłano pomyślnie']);
+        exit; // WAŻNE: To polecenie natychmiast kończy skrypt. Mail się NIE wyśle.
+    }
 
     $mail = new PHPMailer(true);
 
